@@ -48,6 +48,7 @@ node_modules/
 
 #key
 key/
+utils/config.js
 
 # Optional npm cache directory
 .npm
