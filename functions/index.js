@@ -1,10 +1,10 @@
 const functions = require("firebase-functions");
-const { getAllShouts, createNewShout } = require("./handlers/shouts");
-const { signUpUser, loginUser } = require("./handlers/users");
-const firebaseAuth = require("./utils/fbauth");
 const express = require("express");
-
 const app = express();
+
+const firebaseAuth = require("./utils/fbauth");
+const { getAllShouts, createNewShout } = require("./handlers/shouts");
+const { signUpUser, loginUser, uploadImage } = require("./handlers/users");
 
 // Get all the shouts
 app.get("/shouts", getAllShouts);
@@ -17,5 +17,8 @@ app.post("/signup", signUpUser);
 
 // login route
 app.post("/login", loginUser);
+
+// Image upload
+app.post("/user/image", firebaseAuth, uploadImage);
 
 exports.api = functions.https.onRequest(app);

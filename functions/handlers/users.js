@@ -1,10 +1,14 @@
-const { db } = require("../utils/admin");
+const { db, admin } = require("../utils/admin");
 const config = require("../utils/config");
 const {
   validateSignUpData,
   validateSignInData
 } = require("../utils/validators");
 
+const BusBoy = require("busboy");
+const path = require("path");
+const os = require("os");
+const fs = require("fs");
 const firebase = require("firebase");
 
 firebase.initializeApp(config);
@@ -93,4 +97,56 @@ exports.loginUser = (req, res) => {
       }
       return res.status(500).json({ error: error.code });
     });
+};
+
+exports.uploadImage = (req, res) => {
+  const busboy = new BusBoy({ headers: req.headers });
+
+  let imageFileName;
+  let imageToBeUploaded = {};
+
+  busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+    console.log(fieldname);
+    console.log(filename);
+    console.log(mimetype);
+    const imageExtension = filename.split(".")[filename.split(".").length - 1];
+    imageFileName = `${Math.round(
+      Math.random() * 100000000000
+    )}.${imageExtension}`;
+    const filePath = path.join(os.tmpdir(), imageFileName);
+    imageToBeUploaded = { filePath, mimetype };
+    file.pipe(fs.createWriteStream(filePath));
+  });
+
+  busboy.on("finish", () => {
+    admin
+      .storage()
+      .bucket()
+      .upload(imageToBeUploaded.filePath, {
+        resumable: false,
+        metadata: {
+          metadata: {
+            contentType: imageToBeUploaded.mimetype
+          }
+        }
+      })
+      .then(() => {
+        const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          config.storageBucket
+        }/o/${imageFileName}?alt=media`;
+        return db
+          .collection("users")
+          .doc(req.user.handle)
+          .update({ imageUrl });
+      })
+      .then(() => {
+        return res.json({ message: "Image uploaded successfully" });
+      })
+      .catch(error => {
+        console.log(error);
+        return res.status(500).json({ error: error.code });
+      });
+  });
+
+  busboy.end(req.rawBody);
 };
