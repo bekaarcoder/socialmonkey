@@ -2,7 +2,8 @@ const { db, admin } = require("../utils/admin");
 const config = require("../utils/config");
 const {
   validateSignUpData,
-  validateSignInData
+  validateSignInData,
+  validateUserDetails
 } = require("../utils/validators");
 
 const BusBoy = require("busboy");
@@ -26,6 +27,8 @@ exports.signUpUser = (req, res) => {
   if (!valid) {
     return res.status(400).json(errors);
   }
+
+  const imageDefault = "user_img.png";
 
   let idToken, userId;
 
@@ -51,6 +54,9 @@ exports.signUpUser = (req, res) => {
         handle: newUser.handle,
         email: newUser.email,
         userId,
+        imageUrl: `https://firebasestorage.googleapis.com/v0/b/${
+          config.storageBucket
+        }/o/${imageDefault}?alt=media`,
         createdAt: new Date().toISOString()
       };
       return db
@@ -99,6 +105,26 @@ exports.loginUser = (req, res) => {
     });
 };
 
+exports.addUserDetails = (req, res) => {
+  const details = {
+    bio: req.body.bio,
+    website: req.body.website,
+    location: req.body.location
+  };
+
+  const userDetails = validateUserDetails(details);
+
+  db.collection("users")
+    .doc(req.user.handle)
+    .update(userDetails)
+    .then(() => {
+      return res.json({ message: "User details added successfully" });
+    })
+    .catch(error => {
+      return res.status(500).json({ error: error.code });
+    });
+};
+
 exports.uploadImage = (req, res) => {
   const busboy = new BusBoy({ headers: req.headers });
 
@@ -106,9 +132,11 @@ exports.uploadImage = (req, res) => {
   let imageToBeUploaded = {};
 
   busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-    console.log(fieldname);
-    console.log(filename);
-    console.log(mimetype);
+    if (mimetype !== "image/jpeg" && mimetype !== "image/png") {
+      return res
+        .status(400)
+        .json({ error: "Please select a file type of correct format" });
+    }
     const imageExtension = filename.split(".")[filename.split(".").length - 1];
     imageFileName = `${Math.round(
       Math.random() * 100000000000
