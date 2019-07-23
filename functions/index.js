@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 
 const firebaseAuth = require("./utils/fbauth");
-const { getAllShouts, createNewShout } = require("./handlers/shouts");
+const { getAllShouts, createNewShout, getShout } = require("./handlers/shouts");
 const {
   signUpUser,
   loginUser,
@@ -17,6 +17,14 @@ app.get("/shouts", getAllShouts);
 
 // Create new shout
 app.post("/createShout", firebaseAuth, createNewShout);
+
+// Get shout
+app.get("/shout/:shoutId", getShout);
+
+// Delete Shout
+// Like a shout
+// Unlike a shout
+// Comment on a shout
 
 // signup route
 app.post("/signup", signUpUser);

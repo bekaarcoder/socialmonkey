@@ -50,3 +50,32 @@ exports.createNewShout = (req, res) => {
       res.status(500).json({ error: "Something went bad" });
     });
 };
+
+exports.getShout = (req, res) => {
+  let shoutData = {};
+  db.collection("shouts")
+    .doc(req.params.shoutId)
+    .get()
+    .then(doc => {
+      if (!doc.exists) {
+        return res.status(500).json({ error: "Shout does not exist" });
+      }
+      shoutData = doc.data();
+      shoutData.shoutId = doc.id;
+      return db
+        .collection("comments")
+        .orderBy("createdAt", "desc")
+        .where("shoutId", "==", req.params.shoutId)
+        .get();
+    })
+    .then(data => {
+      shoutData.comments = [];
+      data.forEach(doc => {
+        shoutData.comments.push(doc.data());
+      });
+      return res.json(shoutData);
+    })
+    .catch(error => {
+      return res.status(400).json(error);
+    });
+};
