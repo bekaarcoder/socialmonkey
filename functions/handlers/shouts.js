@@ -79,3 +79,27 @@ exports.getShout = (req, res) => {
       return res.status(400).json(error);
     });
 };
+
+exports.postComment = (req, res) => {
+  const newComment = {
+    commentBody: req.body.commentBody,
+    createdAt: new Date().toISOString(),
+    userHandle: req.user.handle,
+    shoutId: req.params.shoutId
+  };
+  db.collection("shouts")
+    .doc(req.params.shoutId)
+    .get()
+    .then(doc => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Shout not found" });
+      }
+      return db.collection("comments").add(newComment);
+    })
+    .then(() => {
+      res.json(newComment);
+    })
+    .catch(error => {
+      return res.status(500).json(error);
+    });
+};
