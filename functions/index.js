@@ -8,7 +8,8 @@ const {
   createNewShout,
   getShout,
   postComment,
-  likeShout
+  likeShout,
+  deleteShout
 } = require("./handlers/shouts");
 const {
   signUpUser,
@@ -28,8 +29,11 @@ app.post("/createShout", firebaseAuth, createNewShout);
 app.get("/shout/:shoutId", getShout);
 
 // Delete Shout
+app.delete("/shout/:shoutId", firebaseAuth, deleteShout);
+
 // Like and unlike a shout
 app.get("/shout/:shoutId/like", firebaseAuth, likeShout);
+
 // Comment on a shout
 app.post("/shout/:shoutId/comment", firebaseAuth, postComment);
 

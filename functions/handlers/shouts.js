@@ -99,6 +99,9 @@ exports.postComment = (req, res) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "Shout not found" });
       }
+      return doc.ref.update({ commentCount: doc.data().commentCount + 1 });
+    })
+    .then(() => {
       return db.collection("comments").add(newComment);
     })
     .then(() => {
@@ -168,5 +171,26 @@ exports.likeShout = (req, res) => {
     })
     .catch(error => {
       res.status(500).json({ error: "Error" });
+    });
+};
+
+exports.deleteShout = (req, res) => {
+  const document = db.collection("shouts").doc(req.params.shoutId);
+  document
+    .get()
+    .then(doc => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Shout not found" });
+      } else if (doc.data().userHandle !== req.user.handle) {
+        return res.status(401).json({ error: "Unauthorized access" });
+      }
+      return document.delete();
+    })
+    .then(() => {
+      res.json({ message: "Shout deleted successfully" });
+    })
+    .catch(error => {
+      console.log(error);
+      return res.status(500).json(error);
     });
 };
